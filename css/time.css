@@ -1,0 +1,36 @@
+body {
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+  background-color: #000;
+  color: #fff;
+  font-family: var(--app-font);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+canvas {
+  display: block;
+  position: absolute;
+  outline: 0;
+}
+
+.home-link {
+  position: fixed;
+  top: 28px;
+  left: 32px;
+  color: #000000;
+  font-family: var(--app-font);
+  font-size: 72px;
+  line-height: 1;
+  font-weight: 400;
+  text-decoration: none;
+}
+
+.home-link:hover {
+  color: #555;
+}

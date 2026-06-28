@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Grids - Clock</title>
+    <link rel="stylesheet" href="css/fonts.css"/>
+    <link rel="stylesheet" href="css/grid-clock.css"/>
+
+</head>
+<body>
+    <a class="home-link" href="index.html" aria-label="Home">X</a>
+    <div id="canvascontainer" style="width:100%;height: 100%;overflow: hidden;">
+        <canvas id="glcanvas" width="100vw" height="100vh" tabindex="1"></canvas>
+    </div>
+
+    
+    <script type="text/javascript" src="js/patch1/patch.js" async></script>
+    
+
+    <script type="text/javascript">
+
+        function showError(initiator,...args)
+        {
+            CABLES.logErrorConsole("[" + initiator + "]", ...args);
+        }
+
+        function patchInitialized(patch)
+        {
+            // You can now access the patch object (patch), register variable watchers and so on
+        }
+
+        function patchFinishedLoading(patch)
+        {
+            // The patch is ready now, all assets have been loaded
+        }
+
+        document.addEventListener("CABLES.jsLoaded", function (event)
+        {
+            CABLES.patch = new CABLES.Patch({
+            patch: CABLES.exportedPatch,
+            "prefixAssetPath": "",
+            "assetPath": "assets/",
+            "jsPath": "js/patch1/",
+            "glCanvasId": "glcanvas",
+            "glCanvasResizeToWindow": true,
+            "onError": showError,
+            "onPatchLoaded": patchInitialized,
+            "onFinishedLoading": patchFinishedLoading,
+            "canvas": {"alpha":true, "premultipliedAlpha":true } // make canvas transparent
+        });
+        });
+
+        // disable rubberband effect on mobile devices
+        document.getElementById('glcanvas').addEventListener('touchmove', (e)=>{ e.preventDefault(); }, false);
+    </script>
+</body>
+</html>

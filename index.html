@@ -4,61 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Playing with time — CCC</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: #ffff00;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-    }
-    header {
-      position: fixed;
-      top: 22px;
-      left: 24px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 20px;
-      color: #000;
-    }
-    header img {
-      width: 30px;
-      height: 30px;
-    }
-    footer {
-      position: fixed;
-      bottom: 22px;
-      right: 24px;
-      font-size: 15px;
-      color: #000;
-    }
-    canvas { display: block; }
-    #thumb {
-      position: fixed;
-      display: none;
-      pointer-events: none;
-      width: 200px;
-    }
-    #info-banner {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 60px 64px;
-      font-size: 20px;
-      line-height: 1.5;
-      color: #000;
-      transform: translateY(100%);
-      transition: transform 0.35s ease;
-    }
-    #info-banner.visible { transform: translateY(0); }
-  </style>
+  <link rel="stylesheet" href="css/fonts.css"/>
+  <link rel="stylesheet" href="css/index.css"/>
 </head>
 <body>
   <header>
@@ -66,19 +13,18 @@
     <img src="img/clock.png" alt="clock"/>
   </header>
 
-  <canvas id="c"></canvas>
+  <div id="circle-layer" aria-label="Project selector"></div>
   <img id="thumb" src="" alt=""/>
 
-  <footer id="footer">Project Title &nbsp;|&nbsp; Name Surname</footer>
+  <footer id="footer" aria-hidden="true"></footer>
 
   <div id="info-banner">
     <p>A co-created interactive experiment<br>around the theme of playing with time.</p>
-    <p>Developed during <a href="https://cursormag.net/" target="_blank" style="color:#000;">CURSOR MAG ↗</a><br>Creative Coding Camp</p>
+    <p class="banner-text-details">Developed during <a class="banner-link" href="https://cursormag.net/" target="_blank">CURSOR MAG ↗</a><br>Creative Coding Camp</p>
   </div>
 
   <script>
-    const canvas = document.getElementById('c');
-    const ctx = canvas.getContext('2d');
+    const circleLayer = document.getElementById('circle-layer');
     const footer = document.getElementById('footer');
     const infoBanner = document.getElementById('info-banner');
     const thumbEl = document.getElementById('thumb');
@@ -87,7 +33,17 @@
     const headerEl = document.querySelector('header');
 
     headerEl.addEventListener('mouseenter', () => infoBanner.classList.add('visible'));
-    headerEl.addEventListener('mouseleave', () => { if (!bannerPinned) infoBanner.classList.remove('visible'); });
+    headerEl.addEventListener('mouseleave', () => {
+      if (!bannerPinned && !infoBanner.matches(':hover')) {
+        infoBanner.classList.remove('visible');
+      }
+    });
+    infoBanner.addEventListener('mouseenter', () => infoBanner.classList.add('visible'));
+    infoBanner.addEventListener('mouseleave', () => {
+      if (!bannerPinned && !headerEl.matches(':hover')) {
+        infoBanner.classList.remove('visible');
+      }
+    });
     headerEl.addEventListener('click', () => {
       bannerPinned = !bannerPinned;
       infoBanner.classList.toggle('visible', bannerPinned);
@@ -97,26 +53,36 @@
       { num: 1, href: 'pages/hms.html',        title: 'HOURS MINUTES SECONDS', name: 'Caoimhe Gallahue',       thumb: 'img/thumb-hms.png' },
       { num: 2, href: 'pages/play-clock.html', title: 'Play Clock',             name: 'Caoimhe Gallahue',       thumb: 'img/thumb-play-clock.png' },
       { num: 3, href: 'pages/i-gen.html',      title: 'Inefficiency Generator', name: 'Meike Lips, Eli Ehlers', thumb: 'img/thumb-ig.png' },
+      { num: 4, href: 'grid-clock.html',      title: 'Grid Clock',             name: 'Federico Torretti',      thumb: 'img/clock.png' },
+      { num: 5, href: 'time.html',      title: 'Gifting Time',             name: 'Federico Torretti',      thumb: 'img/clock.png' },
     ];
-
-    const defaultByline = 'Project Title  |  Name Surname';
 
     const N = 8;
     let circles = [];
     let hovered = -1;
+    let activeProject = null;
+    let circleEls = [];
+    let cursorX = 0;
+    let cursorY = 0;
+
+    function positionThumb(x, y) {
+      const offset = 24;
+      thumbEl.style.left = `${x + offset}px`;
+      thumbEl.style.top = `${y + offset}px`;
+    }
 
     function resize() {
-      canvas.width  = window.innerWidth;
-      canvas.height = window.innerHeight;
       buildCircles();
-      draw();
     }
 
     function buildCircles() {
-      const cx   = canvas.width  / 2;
-      const cy   = canvas.height / 2;
-      const ring = Math.min(canvas.width, canvas.height) * 0.30;
-      const r    = Math.min(canvas.width, canvas.height) * 0.055;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const cx = width / 2;
+      const cy = height / 2;
+      const ring = Math.min(width, height) * 0.30;
+      const r = Math.min(width, height) * 0.035;
+
       circles = Array.from({ length: N }, (_, i) => {
         const angle = (i / N) * Math.PI * 2 - Math.PI / 2;
         return {
@@ -126,68 +92,93 @@
           project: i < projects.length ? projects[i] : null,
         };
       });
+
+      circleLayer.innerHTML = '';
+      circleEls = circles.map((circle, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'circle';
+        const hasProject = Boolean(circle.project && circle.project.num != null);
+        button.textContent = hasProject ? String(circle.project.num) : '';
+        button.style.width = `${circle.r * 2}px`;
+        button.style.height = `${circle.r * 2}px`;
+        button.style.left = `${circle.x}px`;
+        button.style.top = `${circle.y}px`;
+        button.disabled = !hasProject;
+        button.setAttribute('aria-label', hasProject ? circle.project.title : `Circle ${index + 1}`);
+
+        if (hasProject) {
+          button.addEventListener('mouseenter', (event) => setHover(index, event));
+          button.addEventListener('mouseleave', () => {
+            if (hovered === index) {
+              clearHover();
+            }
+          });
+          button.addEventListener('click', () => {
+            window.location.href = circle.project.href;
+          });
+        }
+
+        circleLayer.appendChild(button);
+        return button;
+      });
+
+      if (hovered >= 0) {
+        applyHover(hovered);
+      }
     }
 
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      circles.forEach((c, i) => {
-        const r = i === hovered ? c.r * 1.18 : c.r;
-        ctx.fillStyle = '#000';
-        ctx.beginPath();
-        ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
-        ctx.fill();
-
-        if (c.project && i === hovered) {
-          ctx.fillStyle = '#ffff00';
-          ctx.font = `bold ${r * 0.9}px Arial`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(c.project.num, c.x, c.y);
-        }
+    function applyHover(index) {
+      hovered = index;
+      activeProject = index >= 0 ? circles[index].project : null;
+      circleEls.forEach((button, i) => {
+        button.classList.toggle('is-hovered', i === index);
       });
+
+      const proj = activeProject;
+      footer.textContent = proj ? `${proj.title}  |  ${proj.name}` : '';
+      footer.classList.toggle('is-visible', Boolean(proj));
+      footer.setAttribute('aria-hidden', proj ? 'false' : 'true');
+      document.body.style.cursor = proj ? 'pointer' : 'default';
+
+      if (proj) {
+        thumbEl.src = proj.thumb;
+        thumbEl.alt = proj.title;
+        thumbEl.style.display = 'block';
+        positionThumb(cursorX, cursorY);
+      } else {
+        thumbEl.style.display = 'none';
+        thumbEl.alt = '';
+      }
     }
 
-    canvas.addEventListener('mousemove', e => {
-      const mx = e.clientX, my = e.clientY;
-      let found = -1;
-      circles.forEach((c, i) => {
-        if (Math.hypot(mx - c.x, my - c.y) <= c.r * 1.4) found = i;
-      });
+    function setHover(index, event) {
+      if (event) {
+        cursorX = event.clientX;
+        cursorY = event.clientY;
+      }
+      if (index !== hovered) {
+        applyHover(index);
+      } else if (activeProject) {
+        positionThumb(cursorX, cursorY);
+      }
+    }
 
-      if (found !== hovered) {
-        hovered = found;
-        draw();
-        const proj = found >= 0 ? circles[found].project : null;
-        footer.textContent = proj ? `${proj.title}  |  ${proj.name}` : defaultByline;
-        canvas.style.cursor = proj ? 'pointer' : 'default';
-        if (proj) {
-          const c = circles[found];
-          const cx = canvas.width / 2, cy = canvas.height / 2;
-          const dx = c.x - cx, dy = c.y - cy;
-          const len = Math.hypot(dx, dy) || 1;
-          const offset = c.r * 2.5;
-          thumbEl.src = proj.thumb;
-          thumbEl.style.display = 'block';
-          thumbEl.style.left = (c.x + (dx / len) * offset) + 'px';
-          thumbEl.style.top  = (c.y + (dy / len) * offset) + 'px';
-        } else {
-          thumbEl.style.display = 'none';
-        }
+    function clearHover() {
+      applyHover(-1);
+    }
+
+    document.addEventListener('mousemove', (event) => {
+      cursorX = event.clientX;
+      cursorY = event.clientY;
+
+      if (activeProject) {
+        positionThumb(cursorX, cursorY);
       }
     });
 
-    canvas.addEventListener('mouseleave', () => {
-      hovered = -1;
-      draw();
-      footer.textContent = defaultByline;
-      canvas.style.cursor = 'default';
-      thumbEl.style.display = 'none';
-    });
-
-    canvas.addEventListener('click', () => {
-      if (hovered >= 0 && circles[hovered].project) {
-        window.location.href = circles[hovered].project.href;
-      }
+    circleLayer.addEventListener('mouseleave', () => {
+      clearHover();
     });
 
     window.addEventListener('resize', resize);

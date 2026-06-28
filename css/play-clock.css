@@ -1,0 +1,34 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  font-family: var(--app-font);
+}
+
+#time-clock canvas {
+  display: block;
+}
+
+.home-link {
+  position: fixed;
+  top: 28px;
+  left: 32px;
+  color: #000000;
+  font-family: var(--app-font);
+  font-size: 72px;
+  line-height: 1;
+  font-weight: 400;
+  text-decoration: none;
+}
+
+.home-link:hover {
+  color: #555;
+}

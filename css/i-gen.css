@@ -1,0 +1,118 @@
+:root {
+  --page-bg: yellowgreen;
+  --page-font: var(--app-font);
+  --page-gap: 16px;
+  --page-padding: 40px 20px;
+  --card-width: 460px;
+  --card-height: 500px;
+  --card-radius: 15px;
+  --card-padding: 20px;
+  --clock-size: 360px;
+  --clock-margin-top: 100px;
+  --hand-color: blue;
+  --hand-width: 6px;
+  --center-color: red;
+  --button-font-size: 18px;
+  --button-bg: #fff;
+  --button-text: #000;
+  --button-border: #000;
+  --button-radius: 10px;
+  --button-padding: 8px 14px;
+  --link-color: #000000;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--page-gap);
+  padding: var(--page-padding);
+  background: var(--page-bg);
+  font-family: var(--page-font);
+}
+
+h1 {
+  margin: 0;
+  text-align: center;
+}
+
+.card {
+  width: var(--card-width);
+  height: var(--card-height);
+  padding: var(--card-padding);
+  box-sizing: border-box;
+  text-align: center;
+  border-radius: var(--card-radius);
+  background-image: url("../img/Duck.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+svg#clock {
+  display: block;
+  width: var(--clock-size);
+  height: var(--clock-size);
+  margin: var(--clock-margin-top) auto 0;
+}
+
+.hand {
+  stroke: var(--hand-color);
+  stroke-width: var(--hand-width);
+  stroke-linecap: round;
+  cursor: grab;
+}
+
+.center {
+  fill: var(--center-color);
+}
+
+.time-display {
+  margin-top: 10px;
+}
+
+.hour-number {
+  fill: #333;
+  font-size: 10px;
+  font-weight: 700;
+  text-anchor: middle;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+button#generateBtn {
+  padding: var(--button-padding);
+  border: 2px solid var(--button-border);
+  border-radius: var(--button-radius);
+  background-color: var(--button-bg);
+  color: var(--button-text);
+  font-family: var(--page-font);
+  font-size: var(--button-font-size);
+  cursor: pointer;
+}
+
+.home-link {
+  position: fixed;
+  top: 28px;
+  left: 32px;
+  z-index: 1000;
+  color: var(--link-color);
+  font-family: var(--app-font);
+  font-size: 72px;
+  line-height: 1;
+  font-weight: 400;
+  text-decoration: none;
+}
+
+.home-link:hover {
+  color: #555;
+}

@@ -1,0 +1,40 @@
+body {
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+  background-color: #000;
+  color: #fff;
+  font-family: var(--app-font);
+}
+
+canvas {
+  display: block;
+  position: absolute;
+  z-index: -1;
+  outline: 0;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.home-link {
+  position: fixed;
+  top: 28px;
+  left: 32px;
+  color: black;
+  font-family: var(--app-font);
+  font-size: 72px;
+  line-height: 1;
+  font-weight: 400;
+  text-decoration: none;
+}
+
+.home-link:hover {
+  color: #bbb;
+}

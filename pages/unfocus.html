@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>time to unfocus</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        background: #000;
+        color: #eee;
+        font-family: system-ui, sans-serif;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
+    <script>
+      // Tunable defaults (the controller UI was removed; edit here to retune).
+      // linearity    — 0 = perfect real time, 1 = full non-linear drift.
+      // dissociation — 0 = clean clock, 1 = hands wobble + partially decouple.
+      const params = {
+        linearity: 0.6,
+        dissociation: 0,
+      };
+
+      let hourImg, minuteImg, secondImg, clockFace;
+
+      // Time-system tuning. The clock's displayTime drifts from real time but
+      // only gently. The rate wobbles via Perlin noise; every ~2 min a soft
+      // sine pulse eases it back toward real time. Drift is capped at 60s.
+      const CALIB_PERIOD = 120; // seconds between recalibrations (±jitter)
+      const CALIB_FRACTION = 0.2; // ~24s of gentle ease per recalibration
+      const RATE_NOISE_AMP = 0.18; // rate ∈ [0.91, 1.09] at L=1
+      const RATE_NOISE_FREQ = 0.08; // lower = longer stretches of same speed
+      const PULL_K = 0.18; // spring constant during recalibration
+      const MAX_DT = 0.1; // clamp dt so backgrounded tabs don't jump
+      const LIN_DRIFT = 0.04; // how much linearity wanders from the slider
+      const LIN_SHIFT_INTERVAL = 45; // seconds between linearity re-rolls
+      const DRIFT_CAP = 60; // hard cap, in seconds
+
+      let displayTime = 0;
+      let realStart = 0;
+      let displayStart = 0;
+      let nextCalib = 120;
+      let calibT = 1; // 0 → 1 across a recalibration; 1 = idle
+
+      // Baseline overlay: a properly-behaved clock showing actual real time.
+      // Toggled by clicking the clock face (or pressing B).
+      let baselineMode = false;
+
+      // Linearity wobbles on its own so the recalibration cadence feels organic.
+      let liveLinearity = params.linearity;
+      let lastLinearityShift = 0;
+
+      function getSecondsOfDay() {
+        const d = new Date();
+        return (
+          d.getHours() * 3600 +
+          d.getMinutes() * 60 +
+          d.getSeconds() +
+          d.getMilliseconds() / 1000
+        );
+      }
+
+      const sketch = (p) => {
+        p.setup = () => {
+          p.createCanvas(p.windowWidth, p.windowHeight);
+          p.colorMode(p.RGB);
+          p.drawingContext.canvas.style.cursor = "default";
+
+          hourImg = p.loadImage("../img/unfocus/hour.png");
+          minuteImg = p.loadImage("../img/unfocus/minute.png");
+          secondImg = p.loadImage("../img/unfocus/second.png");
+          clockFace = p.loadImage("../img/unfocus/clock.png");
+
+          realStart = performance.now();
+          displayTime = getSecondsOfDay();
+          displayStart = displayTime;
+          nextCalib = CALIB_PERIOD + (Math.random() - 0.5) * 12;
+          liveLinearity = params.linearity;
+          lastLinearityShift = 0;
+          calibT = 1;
+        };
+
+        p.keyPressed = () => {
+          if (p.key === "b" || p.key === "B") {
+            baselineMode = !baselineMode;
+          }
+        };
+
+        p.mousePressed = () => {
+          const cx = p.width / 2;
+          const faceSize = p.min(p.width, p.height);
+          const cy = p.height - faceSize / 2;
+          if (p.dist(p.mouseX, p.mouseY, cx, cy) <= faceSize / 2) {
+            baselineMode = !baselineMode;
+          }
+        };
+
+        p.draw = () => {
+          p.background(0, 0, 0);
+
+          const cx = p.width / 2;
+          const R = p.min(p.width, p.height) * 0.36;
+          const faceSize = p.min(p.width, p.height);
+          const cy = p.height - faceSize / 2;
+          p.drawingContext.canvas.style.cursor =
+            p.dist(p.mouseX, p.mouseY, cx, cy) <= faceSize / 2
+              ? "pointer"
+              : "default";
+          p.push();
+          p.imageMode(p.CENTER);
+          p.image(clockFace, cx, cy, faceSize, faceSize);
+          p.pop();
+
+          const realElapsed = (performance.now() - realStart) / 1000;
+          const realTime = displayStart + realElapsed;
+          const dt = Math.min(p.deltaTime / 1000, MAX_DT);
+
+          // proximity factor: 0 outside an inner ring, 1 right on top of it.
+          const mouseDist = p.dist(p.mouseX, p.mouseY, cx, cy);
+          const innerRing = R * 1.2;
+          const outerRing = R * 2.2;
+          const proximity = Math.max(
+            0,
+            Math.min(1, (outerRing - mouseDist) / (outerRing - innerRing)),
+          );
+
+          if (realElapsed - lastLinearityShift > LIN_SHIFT_INTERVAL) {
+            lastLinearityShift = realElapsed;
+            liveLinearity = Math.max(
+              0,
+              Math.min(
+                1,
+                params.linearity + (Math.random() - 0.5) * 2 * LIN_DRIFT,
+              ),
+            );
+          }
+          const L = liveLinearity * (1 - proximity * 0.9);
+
+          const noisyRate =
+            1 + RATE_NOISE_AMP * (p.noise(realElapsed * RATE_NOISE_FREQ) - 0.5);
+          const rate = (1 - L) * 1 + L * noisyRate;
+          displayTime += dt * rate;
+
+          if (calibT >= 1 && realElapsed >= nextCalib) {
+            calibT = 0;
+            nextCalib = realElapsed + CALIB_PERIOD + (Math.random() - 0.5) * 12;
+          }
+          if (calibT < 1) {
+            const calibDuration = CALIB_PERIOD * CALIB_FRACTION;
+            calibT = Math.min(1, calibT + dt / calibDuration);
+            const ramp = Math.sin(calibT * Math.PI);
+            displayTime += (realTime - displayTime) * PULL_K * ramp * dt;
+          }
+
+          const driftNow = displayTime - realTime;
+          if (Math.abs(driftNow) > DRIFT_CAP) {
+            displayTime = realTime + Math.sign(driftNow) * DRIFT_CAP;
+          }
+
+          const D = Math.min(1, params.dissociation + proximity * 0.9);
+          const noiseScale = D * 6.0 * proximity;
+          const wiggle = D * 0.6 * proximity;
+          const indepFactor = D * proximity;
+
+          const n = (offset) => p.noise(realElapsed * 0.4 + offset) - 0.5;
+
+          // Hours wrapped to 12 (the face is a 12-hour face).
+          const baseSec = displayTime % 60;
+          const baseMin = (displayTime / 60) % 60;
+          const baseHr = (displayTime / 3600) % 12;
+
+          const sec = baseSec + n(20) * noiseScale;
+          const min = baseMin + (n(10) * noiseScale) / 60;
+          const hr = baseHr + (n(0) * noiseScale) / 3600;
+
+          const blend = (linked, indepV) =>
+            linked * (1 - indepFactor) + indepV * indepFactor;
+          const hrUse = blend(hr + min / 60, hr);
+          const minUse = blend(min + sec / 60, min);
+          const secUse = sec;
+
+          const hand = (val, total, img, len) => {
+            const a = (val / total) * p.TWO_PI;
+            const wn = wiggle
+              ? (p.noise(realElapsed * 1.5 + val * 5) - 0.5) * wiggle
+              : 0;
+            const a2 = a + wn;
+            p.push();
+            p.translate(cx, cy);
+            p.rotate(a2);
+            p.imageMode(p.CENTER);
+            const targetH = R * 2 * len;
+            const scale = targetH / img.height;
+            p.image(
+              img,
+              0,
+              (-img.height * scale) / 2,
+              img.width * scale,
+              img.height * scale,
+            );
+            p.pop();
+          };
+
+          hand(hrUse, 12, hourImg, 0.25);
+          hand(minUse, 60, minuteImg, 0.35);
+          hand(secUse, 60, secondImg, 0.45);
+
+          if (baselineMode) {
+            const realSec = realTime % 60;
+            const realMin = (realTime / 60) % 60;
+            const realHr = (realTime / 3600) % 12;
+            const realSecUse = realSec;
+            const realMinUse = realMin + realSecUse / 60;
+            const realHrUse = realHr + realMinUse / 60;
+
+            const baselineHand = (val, total, img, len) => {
+              const a = (val / total) * p.TWO_PI;
+              p.push();
+              p.translate(cx, cy);
+              p.rotate(a);
+              p.imageMode(p.CENTER);
+              p.tint(120, 255, 180, 140);
+              const targetH = R * 2 * len;
+              const scale = targetH / img.height;
+              p.image(
+                img,
+                0,
+                (-img.height * scale) / 2,
+                img.width * scale,
+                img.height * scale,
+              );
+              p.noTint();
+              p.pop();
+            };
+
+            baselineHand(realHrUse, 12, hourImg, 0.55);
+            baselineHand(realMinUse, 60, minuteImg, 0.68);
+            baselineHand(realSecUse, 60, secondImg, 0.92);
+          }
+
+          p.noStroke();
+          p.fill(240);
+          p.circle(cx, cy, 8);
+        };
+
+        p.windowResized = () => {
+          p.resizeCanvas(p.windowWidth, p.windowHeight);
+        };
+      };
+
+      new p5(sketch);
+    </script>
+  </body>
+</html>

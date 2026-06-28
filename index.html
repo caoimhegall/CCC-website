@@ -1,188 +1,244 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Playing with time — CCC</title>
-  <link rel="stylesheet" href="css/fonts.css"/>
-  <link rel="stylesheet" href="css/index.css"/>
-</head>
-<body>
-  <header>
-    Playing with time
-    <img src="img/clock.png" alt="clock"/>
-  </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Playing with time — CCC</title>
+    <link rel="stylesheet" href="css/fonts.css" />
+    <link rel="stylesheet" href="css/index.css" />
+  </head>
+  <body>
+    <header>
+      Playing with time
+      <img src="img/clock.png" alt="clock" />
+    </header>
 
-  <div id="circle-layer" aria-label="Project selector"></div>
-  <img id="thumb" src="" alt=""/>
+    <div id="circle-layer" aria-label="Project selector"></div>
+    <img id="thumb" src="" alt="" />
 
-  <footer id="footer" aria-hidden="true"></footer>
+    <footer id="footer" aria-hidden="true"></footer>
 
-  <div id="info-banner">
-    <p>A co-created interactive experiment<br>around the theme of playing with time.</p>
-    <p class="banner-text-details">Developed during <a class="banner-link" href="https://cursormag.net/" target="_blank">CURSOR MAG ↗</a><br>Creative Coding Camp</p>
-  </div>
+    <div id="info-banner">
+      <p>
+        A co-created interactive experiment<br />around the theme of playing
+        with time.
+      </p>
+      <p class="banner-text-details">
+        Developed during
+        <a class="banner-link" href="https://cursormag.net/" target="_blank"
+          >CURSOR MAG ↗</a
+        ><br />Creative Coding Camp
+      </p>
+    </div>
 
-  <script>
-    const circleLayer = document.getElementById('circle-layer');
-    const footer = document.getElementById('footer');
-    const infoBanner = document.getElementById('info-banner');
-    const thumbEl = document.getElementById('thumb');
+    <script>
+      const circleLayer = document.getElementById("circle-layer");
+      const footer = document.getElementById("footer");
+      const infoBanner = document.getElementById("info-banner");
+      const thumbEl = document.getElementById("thumb");
 
-    let bannerPinned = false;
-    const headerEl = document.querySelector('header');
+      let bannerPinned = false;
+      const headerEl = document.querySelector("header");
 
-    headerEl.addEventListener('mouseenter', () => infoBanner.classList.add('visible'));
-    headerEl.addEventListener('mouseleave', () => {
-      if (!bannerPinned && !infoBanner.matches(':hover')) {
-        infoBanner.classList.remove('visible');
-      }
-    });
-    infoBanner.addEventListener('mouseenter', () => infoBanner.classList.add('visible'));
-    infoBanner.addEventListener('mouseleave', () => {
-      if (!bannerPinned && !headerEl.matches(':hover')) {
-        infoBanner.classList.remove('visible');
-      }
-    });
-    headerEl.addEventListener('click', () => {
-      bannerPinned = !bannerPinned;
-      infoBanner.classList.toggle('visible', bannerPinned);
-    });
-
-    const projects = [
-      { num: 1, href: 'pages/hms.html',        title: 'HOURS MINUTES SECONDS', name: 'Caoimhe Gallahue',       thumb: 'img/thumb-hms.png' },
-      { num: 2, href: 'pages/play-clock.html', title: 'Play Clock',             name: 'Caoimhe Gallahue',       thumb: 'img/thumb-play-clock.png' },
-      { num: 3, href: 'pages/i-gen.html',      title: 'Inefficiency Generator', name: 'Meike Lips, Eli Ehlers', thumb: 'img/thumb-ig.png' },
-      { num: 4, href: 'grid-clock.html',      title: 'Grid Clock',             name: 'Federico Torretti',      thumb: 'img/clock.png' },
-      { num: 5, href: 'time.html',      title: 'Gifting Time',             name: 'Federico Torretti',      thumb: 'img/clock.png' },
-    ];
-
-    const N = 8;
-    let circles = [];
-    let hovered = -1;
-    let activeProject = null;
-    let circleEls = [];
-    let cursorX = 0;
-    let cursorY = 0;
-
-    function positionThumb(x, y) {
-      const offset = 24;
-      thumbEl.style.left = `${x + offset}px`;
-      thumbEl.style.top = `${y + offset}px`;
-    }
-
-    function resize() {
-      buildCircles();
-    }
-
-    function buildCircles() {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      const cx = width / 2;
-      const cy = height / 2;
-      const ring = Math.min(width, height) * 0.30;
-      const r = Math.min(width, height) * 0.035;
-
-      circles = Array.from({ length: N }, (_, i) => {
-        const angle = (i / N) * Math.PI * 2 - Math.PI / 2;
-        return {
-          x: cx + ring * Math.cos(angle),
-          y: cy + ring * Math.sin(angle),
-          r,
-          project: i < projects.length ? projects[i] : null,
-        };
-      });
-
-      circleLayer.innerHTML = '';
-      circleEls = circles.map((circle, index) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'circle';
-        const hasProject = Boolean(circle.project && circle.project.num != null);
-        button.textContent = hasProject ? String(circle.project.num) : '';
-        button.style.width = `${circle.r * 2}px`;
-        button.style.height = `${circle.r * 2}px`;
-        button.style.left = `${circle.x}px`;
-        button.style.top = `${circle.y}px`;
-        button.disabled = !hasProject;
-        button.setAttribute('aria-label', hasProject ? circle.project.title : `Circle ${index + 1}`);
-
-        if (hasProject) {
-          button.addEventListener('mouseenter', (event) => setHover(index, event));
-          button.addEventListener('mouseleave', () => {
-            if (hovered === index) {
-              clearHover();
-            }
-          });
-          button.addEventListener('click', () => {
-            window.location.href = circle.project.href;
-          });
+      headerEl.addEventListener("mouseenter", () =>
+        infoBanner.classList.add("visible"),
+      );
+      headerEl.addEventListener("mouseleave", () => {
+        if (!bannerPinned && !infoBanner.matches(":hover")) {
+          infoBanner.classList.remove("visible");
         }
-
-        circleLayer.appendChild(button);
-        return button;
+      });
+      infoBanner.addEventListener("mouseenter", () =>
+        infoBanner.classList.add("visible"),
+      );
+      infoBanner.addEventListener("mouseleave", () => {
+        if (!bannerPinned && !headerEl.matches(":hover")) {
+          infoBanner.classList.remove("visible");
+        }
+      });
+      headerEl.addEventListener("click", () => {
+        bannerPinned = !bannerPinned;
+        infoBanner.classList.toggle("visible", bannerPinned);
       });
 
-      if (hovered >= 0) {
-        applyHover(hovered);
+      const projects = [
+        {
+          num: 1,
+          href: "pages/hms.html",
+          title: "HOURS MINUTES SECONDS",
+          name: "Caoimhe Gallahue",
+          thumb: "img/thumb-hms.png",
+        },
+        {
+          num: 2,
+          href: "pages/play-clock.html",
+          title: "Play Clock",
+          name: "Caoimhe Gallahue",
+          thumb: "img/thumb-play-clock.png",
+        },
+        {
+          num: 3,
+          href: "pages/i-gen.html",
+          title: "Inefficiency Generator",
+          name: "Meike Lips, Eli Ehlers",
+          thumb: "img/thumb-ig.png",
+        },
+        {
+          num: 4,
+          href: "grid-clock.html",
+          title: "Grid Clock",
+          name: "Federico Torretti",
+          thumb: "img/clock.png",
+        },
+        {
+          num: 5,
+          href: "time.html",
+          title: "Gifting Time",
+          name: "Federico Torretti",
+          thumb: "img/clock.png",
+        },
+        {
+          num: 6,
+          href: "pages/unfocus.html",
+          title: "Time to Unfocus",
+          name: "Gagik Amaryan",
+          thumb: "img/thumb-unfocus.png",
+        },
+      ];
+
+      const N = 8;
+      let circles = [];
+      let hovered = -1;
+      let activeProject = null;
+      let circleEls = [];
+      let cursorX = 0;
+      let cursorY = 0;
+
+      function positionThumb(x, y) {
+        const offset = 24;
+        thumbEl.style.left = `${x + offset}px`;
+        thumbEl.style.top = `${y + offset}px`;
       }
-    }
 
-    function applyHover(index) {
-      hovered = index;
-      activeProject = index >= 0 ? circles[index].project : null;
-      circleEls.forEach((button, i) => {
-        button.classList.toggle('is-hovered', i === index);
-      });
-
-      const proj = activeProject;
-      footer.textContent = proj ? `${proj.title}  |  ${proj.name}` : '';
-      footer.classList.toggle('is-visible', Boolean(proj));
-      footer.setAttribute('aria-hidden', proj ? 'false' : 'true');
-      document.body.style.cursor = proj ? 'pointer' : 'default';
-
-      if (proj) {
-        thumbEl.src = proj.thumb;
-        thumbEl.alt = proj.title;
-        thumbEl.style.display = 'block';
-        positionThumb(cursorX, cursorY);
-      } else {
-        thumbEl.style.display = 'none';
-        thumbEl.alt = '';
+      function resize() {
+        buildCircles();
       }
-    }
 
-    function setHover(index, event) {
-      if (event) {
+      function buildCircles() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        const cx = width / 2;
+        const cy = height / 2;
+        const ring = Math.min(width, height) * 0.3;
+        const r = Math.min(width, height) * 0.035;
+
+        circles = Array.from({ length: N }, (_, i) => {
+          const angle = (i / N) * Math.PI * 2 - Math.PI / 2;
+          return {
+            x: cx + ring * Math.cos(angle),
+            y: cy + ring * Math.sin(angle),
+            r,
+            project: i < projects.length ? projects[i] : null,
+          };
+        });
+
+        circleLayer.innerHTML = "";
+        circleEls = circles.map((circle, index) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "circle";
+          const hasProject = Boolean(
+            circle.project && circle.project.num != null,
+          );
+          button.textContent = hasProject ? String(circle.project.num) : "";
+          button.style.width = `${circle.r * 2}px`;
+          button.style.height = `${circle.r * 2}px`;
+          button.style.left = `${circle.x}px`;
+          button.style.top = `${circle.y}px`;
+          button.disabled = !hasProject;
+          button.setAttribute(
+            "aria-label",
+            hasProject ? circle.project.title : `Circle ${index + 1}`,
+          );
+
+          if (hasProject) {
+            button.addEventListener("mouseenter", (event) =>
+              setHover(index, event),
+            );
+            button.addEventListener("mouseleave", () => {
+              if (hovered === index) {
+                clearHover();
+              }
+            });
+            button.addEventListener("click", () => {
+              window.location.href = circle.project.href;
+            });
+          }
+
+          circleLayer.appendChild(button);
+          return button;
+        });
+
+        if (hovered >= 0) {
+          applyHover(hovered);
+        }
+      }
+
+      function applyHover(index) {
+        hovered = index;
+        activeProject = index >= 0 ? circles[index].project : null;
+        circleEls.forEach((button, i) => {
+          button.classList.toggle("is-hovered", i === index);
+        });
+
+        const proj = activeProject;
+        footer.textContent = proj ? `${proj.title}  |  ${proj.name}` : "";
+        footer.classList.toggle("is-visible", Boolean(proj));
+        footer.setAttribute("aria-hidden", proj ? "false" : "true");
+        document.body.style.cursor = proj ? "pointer" : "default";
+
+        if (proj) {
+          thumbEl.src = proj.thumb;
+          thumbEl.alt = proj.title;
+          thumbEl.style.display = "block";
+          positionThumb(cursorX, cursorY);
+        } else {
+          thumbEl.style.display = "none";
+          thumbEl.alt = "";
+        }
+      }
+
+      function setHover(index, event) {
+        if (event) {
+          cursorX = event.clientX;
+          cursorY = event.clientY;
+        }
+        if (index !== hovered) {
+          applyHover(index);
+        } else if (activeProject) {
+          positionThumb(cursorX, cursorY);
+        }
+      }
+
+      function clearHover() {
+        applyHover(-1);
+      }
+
+      document.addEventListener("mousemove", (event) => {
         cursorX = event.clientX;
         cursorY = event.clientY;
-      }
-      if (index !== hovered) {
-        applyHover(index);
-      } else if (activeProject) {
-        positionThumb(cursorX, cursorY);
-      }
-    }
 
-    function clearHover() {
-      applyHover(-1);
-    }
+        if (activeProject) {
+          positionThumb(cursorX, cursorY);
+        }
+      });
 
-    document.addEventListener('mousemove', (event) => {
-      cursorX = event.clientX;
-      cursorY = event.clientY;
+      circleLayer.addEventListener("mouseleave", () => {
+        clearHover();
+      });
 
-      if (activeProject) {
-        positionThumb(cursorX, cursorY);
-      }
-    });
-
-    circleLayer.addEventListener('mouseleave', () => {
-      clearHover();
-    });
-
-    window.addEventListener('resize', resize);
-    resize();
-  </script>
-</body>
+      window.addEventListener("resize", resize);
+      resize();
+    </script>
+  </body>
 </html>
